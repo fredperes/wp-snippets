@@ -1,0 +1,55 @@
+function fredperes_show_memberships_details ($curr_user_id) {
+	if ( is_admin() ) {
+		return;
+	}
+
+	$customer_memberships = wc_memberships_get_user_memberships( $curr_user_id );
+	$former_subscriber = [];
+	$active_subscriber = [];
+
+foreach ( $customer_memberships as $customer_membership ) {
+
+	$membership_plans = $customer_membership -> get_plan() -> get_name();
+	$membership_plans_array[] = $customer_membership->get_plan()->get_name();
+	$membership_plans_status = $customer_membership->get_status();
+	$membership_plans_status_array[] = $customer_membership->get_status();
+
+	if (($membership_plans == "Membership plan name") && ($membership_plans_status == "cancelled")) {$former_subscriber[] = "former_subscriber";}
+	if (($membership_plans == "Membership plan name") && ($membership_plans_status == "expired")) {$former_subscriber[] = "former_subscriber";}
+	if (($membership_plans == "Membership plan name") && ($membership_plans_status == "active")) {$active_subscriber[] = "active_subscriber";}
+	}
+
+	if(!empty($active_subscriber)){
+		$current_stats = "active_subscriber";
+		return $current_stats;
+		exit();
+	}
+	else if (!empty($former_subscriber)){
+		$current_stats = "former_subscriber";
+		return $current_stats;
+		exit();
+	}
+	else {
+		$current_stats = "potential_member";
+		return $current_stats;
+		exit();
+	}
+}
+
+function fredperes_custom_user_redirect( $redirect, $user ) {
+    $username = $user->user_login;
+	$curr_user = get_user_by('login',$username);
+	$curr_user_id = $curr_user->ID;
+	$current_stats = mfix_show_memberships_details ($curr_user_id);
+
+	if( $current_stats == "active_subscriber" ) {
+	//	$redirect = "/start-here/";
+		$redirect = "/content-index/";
+	}
+	if( $current_stats == "former_subscriber" ) {
+	$redirect = "/my-account/";
+	}
+
+	return $redirect;
+}
+add_filter( 'woocommerce_login_redirect', 'mfix_custom_user_redirect', 10, 2 );

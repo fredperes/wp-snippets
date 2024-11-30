@@ -1,0 +1,40 @@
+function custom_woocommerce_shipping_methods($rates, $package) {
+    // Primeiro, verificamos se temos métodos de envio disponíveis
+    if (empty($rates)) {
+        return $rates;
+    }
+
+    // Obtemos o CEP do cliente, removendo qualquer caractere não numérico
+    $shipping_postcode = preg_replace('/[^0-9]/', '', WC()->customer->get_shipping_postcode());
+    
+    // Definimos as faixas de CEP do Sudeste
+    $sudeste_ranges = array(
+        array('start' => '01000000', 'end' => '19999999'), // São Paulo
+        array('start' => '20000000', 'end' => '28999999'), // Rio de Janeiro
+        array('start' => '29000000', 'end' => '29999999'), // Espírito Santo
+        array('start' => '30000000', 'end' => '39999999')  // Minas Gerais
+    );
+    
+    // Verificamos se o CEP está no Sudeste
+    $is_sudeste = false;
+    foreach ($sudeste_ranges as $range) {
+        if ($shipping_postcode >= $range['start'] && $shipping_postcode <= $range['end']) {
+            $is_sudeste = true;
+            break;
+        }
+    }
+    
+    // Percorremos todos os métodos de envio disponíveis
+    foreach ($rates as $rate_id => $rate) {
+        // Se for o método de frete grátis
+        if ($rate->method_id === 'free_shipping') {
+            // Se NÃO estiver no Sudeste, removemos a opção de frete grátis
+            if (!$is_sudeste) {
+                unset($rates[$rate_id]);
+            }
+        }
+    }
+    
+    return $rates;
+}
+add_filter('woocommerce_package_rates', 'custom_woocommerce_shipping_methods', 100, 2);
